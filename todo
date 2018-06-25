@@ -1,0 +1,108 @@
+#!/bin/bash
+
+numberOfTodos=3
+
+function saveAsJSON {
+  printf "Filename: "
+  read fileName
+  echo "[" > $fileName.json
+  sed 's/#//g' todo_db.txt |  awk -F'-' '{ print "{\"id\": "$1 ", \"title\": \""$2"\", \"date\": " "\"" $3"\"""}," }' >> $fileName.json
+  echo "]" >> $fileName.json
+  clear
+  echo -e " \033[31m[SAVED AS]\033[0m $fileName.json"
+  cat $fileName.json
+  sleep 2
+}
+
+function removeTodo {
+  printf "Todo's id to remove: "
+  read todo_id
+  todo_to_delete=$(grep -e "^#$todo_id " todo_db.txt)
+  sed -i .old "s/$todo_to_delete//g" todo_db.txt
+  sed -i .old '/^$/d' todo_db.txt
+  rm todo_db.txt.old
+  sleep 0.3
+  printf "\033[34;1m."
+  sleep 0.3
+  printf "."
+  sleep 0.3
+  printf ".\n"
+  echo -e "\033[31m[REMOVED]\033[0m"
+  sleep 1
+  renderMenu
+}
+
+function renderTodoList {
+  if [ ! -f todo_db.txt ]; then
+    touch todo_db.txt
+  fi
+  echo  "-----------------------"
+  head -n $numberOfTodos todo_db.txt
+  echo  "-----------------------"
+  renderSubMenu
+}
+
+function readMore { 
+  clear
+  numberOfTodos=1000
+  echo -e "\033[33;1mList of todos:\033[0m"
+  renderTodoList
+}
+
+function addTodo {
+  clear
+  # todo_id=$(wc -l todo_db.txt | awk -F " " '{ print $1 }')
+  
+  #If the file doesn't exist, create one
+  if [ ! -f wc.txt ]; then
+    echo 0 > wc.txt
+  fi
+  
+  todo_id=$(cat wc.txt) 
+  todo_id=$(($todo_id+1))
+  echo $todo_id > wc.txt
+  printf "title : "
+  read todo_title
+  printf "date: "
+  read todo_date
+  echo "#$todo_id - $todo_title - $todo_date" >> todo_db.txt
+  sleep 0.3
+  printf "\033[34;1m."
+  sleep 0.3
+  printf "."
+  sleep 0.3
+  printf ".\n"
+  echo -e "\033[32m[SAVED]\033[0m"
+  sleep 1
+
+  renderMenu
+}
+
+function renderMenu {
+  clear
+  echo -e "\033[33;1mList of todo:\033[0m"
+  renderTodoList
+  renderSubMenu
+}
+
+function getAnswer {
+  printf "Your choice: "
+  read answer
+  case $answer in
+    1) addTodo ;;
+    2) removeTodo ;;
+    3) readMore ;;
+    4) saveAsJSON ;;
+    *) getAnswer ;;
+  esac
+}
+
+function renderSubMenu {
+  echo
+  echo -e "\033[32;1m[1] \033[0mADD -\033[32;1m [2] \033[0mDEL -\033[32;1m [3]\033[0m Read more - \033[32;1m[4] \033[0m Save As JSON"
+  echo
+  getAnswer
+}
+
+renderMenu
+
